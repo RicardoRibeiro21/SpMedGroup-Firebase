@@ -1,20 +1,23 @@
 import React, {Component } from 'react';
 import firebase from '../services/firebase';
-
+import '../assets/css/mapstyle.css' 
+import MapContainer from '../pages/mapTest'
 const collection = 'localizacao_atendimento';
+
 class Inicial extends Component{
     constructor(){
         super();
         this.state = {
-            endereco: "",
+            localizacao: "",
             lat: "",
             long:"",
             especialidade: "",
-            idade: "",
-            resultado: "",
+            idade_paciente: "",
+            doenca_paciente: "",
             dadosApi: []
         }       
     }
+
     componentDidMount() {
         this.carregarDados();
     }
@@ -25,16 +28,16 @@ class Inicial extends Component{
             let array = [];
             lista.forEach((dado) => {
                 array.push({
-                    idade: dado.idade_paciente,
-                    endereco: dado.localizacao,
-                    especialidade: dado.especialidade,
-                    doenca_paciente: dado.doenca_paciente
+                    idade_paciente: dado.data().idade_paciente,
+                    // localizacao: dado.data().localizacao.split("@")[0],
+                    localizacao: dado.data().localizacao,
+                    especialidade: dado.data().especialidade,
+                    doenca_paciente: dado.data().doenca_paciente
                 })
             })
             this.setState({ dadosApi : array}); 
+            console.log(this.state.dadosApi);
         })
-        .catch(
-            alert("Algo inesperado aconteceu."));
     }
     atualizarEstado(event){
         this.setState({[event.target.name] : event.target.value})        
@@ -46,36 +49,51 @@ class Inicial extends Component{
         // } else{
             firebase.firestore().collection(collection).add(
                 {
-                    localizacao: this.state.lat + ',' + this.state.long,
-                    idade_paciente: this.state.idade,
+                    localizacao: '@' + this.state.lat + ' , ' + this.state.long + '15z',
+                    idade_paciente: this.state.idade_paciente,
                     especialidade: this.state.especialidade,
-                    doenca_paciente: this.state.resultado
+                    doenca_paciente: this.state.doenca_paciente
                 }
                 )
                 .then(resposta => {
-                    alert("Localização cadastrada com sucesso" );                        
+                    alert("Dados cadastrados com sucesso" );                        
                            // LIMPAR DADOS
                     })
                 .catch(erro => { 
-                    alert('Alguma coisa deu bosta')
+                    alert('Alguma coisa deu bosta');
             })
         // }
     }
+    
 
     render(){
         return(
             <div>
-                {/* <p>{this.dadosApi.map()}</p> */}
+                <p>{this.state.dadosApi.map((dado, key) => {
+                    return(
+                        <div>
+                        <li key={key}>
+                            {dado.idade_paciente.toString()} - {dado.localizacao.toString()} - {dado.especialidade} - {dado.doenca_paciente}
+                        </li>
+                        <a href={`id=${dado.localizacao}`}></a>
+                        </div>
+                    )
+                })}</p>
                 <form onSubmit={this.cadastrarLocalizacao.bind(this)}>
-                    <input type="text" name="lat"placeholder="Latitude"  onChange={this.atualizarEstado.bind(this)} value={this.state.lat} required></input>
-                    <input  type="text" name="long"placeholder="Longitude"onChange={this.atualizarEstado.bind(this)} required value={this.state.long}></input>
-                    <input type="text" name="idade"placeholder="Idade" onChange={this.atualizarEstado.bind(this)} required value={this.state.idade}></input>
-                    <input type="text" name="resultado"placeholder="Resultado" onChange={this.atualizarEstado.bind(this)} required value={this.state.resultado}></input>
+                    <input type="text" name="lat"placeholder="Latitude" onChange={this.atualizarEstado.bind(this)} value={this.state.lat} required></input>
+                    <input  type="text" name="long"placeholder="Longitude" onChange={this.atualizarEstado.bind(this)} required value={this.state.long}></input>
+                    <input type="text" name="idade_paciente"placeholder="Idade" onChange={this.atualizarEstado.bind(this)} required value={this.state.idade_paciente}></input>
+                    <input type="text" name="doenca_paciente"placeholder="Resultado" onChange={this.atualizarEstado.bind(this)} required value={this.state.doenca_paciente}></input>
                     <input type="text" name="especialidade" placeholder="Especialidade" onChange={this.atualizarEstado.bind(this)} required value={this.state.especialidade}></input>
                     <button  type="submit">Enviar</button>
-                </form>
-            </div>   
+                </form>    
+                <div className="Mapa">
+            <MapContainer />
+      </div>
+    </div>   
         )
     }
 }
+
+
 export default Inicial;
