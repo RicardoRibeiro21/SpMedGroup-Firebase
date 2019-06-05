@@ -2,6 +2,7 @@ import React, {Component } from 'react';
 import firebase from '../services/firebase';
 import '../assets/css/mapstyle.css' 
 import MapContainer from '../pages/mapTest'
+import google from 'google-maps-react';
 const collection = 'localizacao_atendimento';
 
 class Inicial extends Component{
@@ -10,19 +11,43 @@ class Inicial extends Component{
         this.state = {
             localizacao: "",
             lat: "",
-            long:"",
+            long:"",    
             especialidade: "",
             idade_paciente: "",
             doenca_paciente: "",
-            dadosApi: []
-        }       
+            dadosApi: [],
+            clinicaArray: [],
+            latitude: "",
+            longitude: "",
+            clinica: "",
+            desc: "",
+            }       
     }
 
     componentDidMount() {
         this.carregarDados();
+        this.carregarClinica();
+    }
+    carregarClinica(){
+        firebase.firestore().collection(collection)
+        .where("clinica", "==", 'SpMedGroup')
+        .get()
+        .then((lista) =>  {
+            let arrayClinica =[];
+            lista.forEach((dado) => {
+                arrayClinica.push({
+                    latitude: dado.data().latitude,
+                    longitude: dado.data().longitude,
+                    desc: dado.data().desc,
+                    clinica: dado.data().clinica
+                })
+            });
+            this.setState({ clinicaArray : arrayClinica})
+        })
     }
     carregarDados(){           
         firebase.firestore().collection(collection)
+        .where("idade_paciente",  ">=" , "0")
         .get()
         .then((lista) => {
             let array = [];
@@ -49,7 +74,7 @@ class Inicial extends Component{
         // } else{
             firebase.firestore().collection(collection).add(
                 {
-                    localizacao: '@' + this.state.lat + ' , ' + this.state.long + '15z',
+                    localizacao: this.state.lat + ' , ' + this.state.long,
                     idade_paciente: this.state.idade_paciente,
                     especialidade: this.state.especialidade,
                     doenca_paciente: this.state.doenca_paciente
@@ -64,8 +89,7 @@ class Inicial extends Component{
             })
         // }
     }
-    
-
+        
     render(){
         return(
             <div>
@@ -73,9 +97,9 @@ class Inicial extends Component{
                     return(
                         <div>
                         <li key={key}>
-                            {dado.idade_paciente.toString()} - {dado.localizacao.toString()} - {dado.especialidade} - {dado.doenca_paciente}
-                        </li>
-                        <a href={`id=${dado.localizacao}`}></a>
+                                {dado.idade_paciente} | {dado.localizacao} | {dado.especialidade} | {dado.doenca_paciente} | <button><a href={`https://www.google.com.br/maps/@${dado.localizacao}`}>Ver localização</a></button>
+                            </li>
+                        
                         </div>
                     )
                 })}</p>
@@ -88,7 +112,16 @@ class Inicial extends Component{
                     <button  type="submit">Enviar</button>
                 </form>    
                 <div className="Mapa">
-            <MapContainer />
+                    <p>{this.state.clinicaArray.map((dados) =>{
+                        return(
+                            <div>
+                                <h1>{dados.clinica}</h1>
+                                <p>{dados.desc}</p>
+                            </div>
+                        )
+                    })}</p>
+                    <MapContainer google={this.props.google} 
+                    />
       </div>
     </div>   
         )
